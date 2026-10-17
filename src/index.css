@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
+@import "tailwindcss";
+
+:root {
+  --bg-0: #0a0a0c;
+  --bg-1: #111114;
+  --bg-2: #18181c;
+  --bg-3: #1f1f24;
+  --border: #2a2a30;
+  --border-subtle: #1e1e24;
+  --text-0: #e2ded6;
+  --text-1: #b0aca4;
+  --text-2: #706c66;
+  --text-3: #4a4844;
+  --accent: #c49368;
+  --accent-dim: rgba(196,147,104,0.12);
+  --accent-hover: #d4a478;
+  --teal: #6a9e9e;
+  --teal-dim: rgba(106,158,158,0.1);
+  --warm: #a08060;
+  --red-soft: #b05050;
+  --green-soft: #6a9a6a;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --jp: 'Noto Sans JP', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--bg-0);
+    color: var(--text-0);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+    min-height: 100vh;
+  }
+
+  /* Kurzagin signature dot grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(circle, var(--border-subtle) 0.5px, transparent 0.5px);
+    background-size: 24px 24px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.45;
+  }
+}
+
+/* Custom scrollbars from Kurzagin */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+}
+
+.font-mono-code {
+  font-family: var(--mono);
+}
+
+.font-sans-ui {
+  font-family: var(--sans);
+}
+
+.font-jp {
+  font-family: var(--jp);
+}
