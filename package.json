@@ -14,8 +14,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Kur Zagin",
+  "license": "Apache-2.0",
+
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^18.0.8",

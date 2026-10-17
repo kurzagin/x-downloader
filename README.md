@@ -63,3 +63,10 @@ The server will run on `http://localhost:3001` serving both the API and compiled
   - Returns parsed post info and media array with download options.
 - `GET /api/download?url=<ENCODED_URL>&filename=<CUSTOM_NAME>`
   - Proxies media stream directly with `Content-Disposition: attachment` to prompt browser file download.
+
+---
+
+## License
+
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
+
