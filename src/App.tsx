@@ -1,6 +1,31 @@
 import React, { useState } from 'react';
 import { TweetInfo, MediaItem } from './types';
 import { 
+  Badge,
+  BottomBar,
+  BracketCard,
+  Breadcrumbs,
+  Button,
+  CornerFrame,
+  CyberSwitch,
+  Dot,
+  HudModal,
+  HudToast,
+  Input,
+  KeyValGrid,
+  Logo,
+  SegmentedControl,
+  SpoilerGate,
+  StickyNote,
+  TacticalDrawer,
+  TechLabel,
+  TelemetryBar,
+  TerminalWindow,
+  Tooltip,
+  Vinyl,
+  formatRelativeTime
+} from '@krpkg/ui';
+import { 
   Download, 
   ExternalLink, 
   Image as ImageIcon, 
@@ -14,7 +39,15 @@ import {
   AlertCircle,
   Copy,
   Check,
-  Film
+  Film,
+  Settings,
+  HelpCircle,
+  Sparkles,
+  Terminal,
+  Layers,
+  Radio,
+  FileCode,
+  Music2
 } from 'lucide-react';
 
 export default function App() {
@@ -24,6 +57,16 @@ export default function App() {
   const [tweet, setTweet] = useState<TweetInfo | null>(null);
   const [copied, setCopied] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<{ [key: string]: string }>({});
+
+  // Cyber / UI Component states to consume the full library
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'media' | 'specs' | 'terminal' | 'vinyl'>('media');
+  const [highQualityOnly, setHighQualityOnly] = useState(true);
+  const [proxyDirect, setProxyDirect] = useState(true);
+  const [bottomNavId, setBottomNavId] = useState('home');
+  const [vinylPlaying, setVinylPlaying] = useState(false);
 
   const handleFetch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -55,8 +98,10 @@ export default function App() {
         }
       });
       setSelectedFormat(initialFormats);
+      setToastMessage(`Parsed ${data.tweet.media?.length || 0} media asset(s) successfully.`);
     } catch (err: any) {
       setError(err.message || 'Something went wrong fetching media.');
+      setToastMessage(`Error: ${err.message || 'Failed to extract'}`);
     } finally {
       setLoading(false);
     }
@@ -74,6 +119,7 @@ export default function App() {
     if (tweet?.url) {
       navigator.clipboard.writeText(tweet.url);
       setCopied(true);
+      setToastMessage('Tweet URL copied to clipboard');
       setTimeout(() => setCopied(false), 2000);
     }
   };
@@ -85,133 +131,244 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col justify-between relative z-10">
-      {/* Kurzagin Style Top Nav */}
-      <header className="sticky top-0 z-50 h-12 bg-[#0a0a0c]/95 backdrop-blur-md border-b border-[#2a2a30] px-4 sm:px-8 flex items-center justify-between">
+    <div className="min-h-screen flex flex-col justify-between relative z-10 pb-20">
+      {/* Toast Notification from @krpkg/ui */}
+      {toastMessage && (
+        <HudToast
+          isOpen={!!toastMessage}
+          onClose={() => setToastMessage(null)}
+          title="SYSTEM TELEMETRY"
+          description={toastMessage}
+          variant={error ? 'alert' : 'teal'}
+          coord="0x7F"
+        />
+      )}
+
+      {/* Top Bar with Breadcrumbs & TechLabel */}
+      <header className="sticky top-0 z-50 h-14 bg-[#0a0a0c]/95 backdrop-blur-md border-b border-[#2a2a30] px-4 sm:px-8 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2.5 font-mono text-[0.8rem] text-[#e2ded6] tracking-wider">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c49368]" />
-            <span className="font-medium">X-DOWNLOADER</span>
-            <span className="text-[0.65rem] text-[#706c66] font-normal hidden sm:inline">メディア・ダウンローダー</span>
-          </div>
+          <Logo size={24} variant="accent" />
+          <Breadcrumbs
+            prefix="SYS//"
+            items={[
+              { label: 'KRPKG', onClick: () => {} },
+              { label: 'X-EXTRACTOR', active: true }
+            ]}
+          />
         </div>
 
-        <div className="flex items-center gap-2 font-mono text-[0.68rem] text-[#b0aca4]">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-[#1f1f24] border border-[#2a2a30]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#6a9a6a]" />
-            ONLINE
-          </span>
+        <div className="flex items-center gap-3">
+          <TechLabel label="NODE" jp="稼働中" coord="JP-NRT-01" className="hidden sm:flex" />
+          <Dot color="green" pulse />
+          <Badge variant="accent">ONLINE</Badge>
+          <Tooltip content="System Parameters & Controls" position="bottom">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsDrawerOpen(true)}
+              className="flex items-center gap-1.5"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">CONFIG</span>
+            </Button>
+          </Tooltip>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-12 flex-1 w-full">
-        {/* Hero Section */}
-        <div className="mb-10 relative">
-          <div className="flex items-center gap-2 font-mono text-[0.65rem] text-[#706c66] uppercase tracking-[3px] mb-3">
-            <span className="w-4 h-[1px] bg-[#c49368]" />
-            <span>MEDIA SCRAPER & PROXY ENGINE</span>
-          </div>
-
-          <h1 className="font-mono text-3xl sm:text-4xl font-light text-[#e2ded6] tracking-tight leading-tight">
-            X <span className="text-[#c49368] font-normal">/</span> Twitter Media Downloader
-          </h1>
-          <p className="mt-2 text-[#706c66] font-mono text-[0.8rem] tracking-wide">
-            Extract high-fidelity MP4 videos, galleries & uncompressed photos with zero quality loss.
-          </p>
-        </div>
-
-        {/* Input Terminal Card */}
-        <div className="bg-[#111114] border border-[#2a2a30] p-4 sm:p-6 relative shadow-lg">
-          {/* Decorative corner markers */}
-          <div className="absolute top-1.5 left-1.5 w-2 h-2 border-t border-l border-[#c49368] opacity-70" />
-          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-[#c49368] opacity-70" />
-          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-[#c49368] opacity-70" />
-          <div className="absolute bottom-1.5 right-1.5 w-2 h-2 border-b border-r border-[#c49368] opacity-70" />
-
-          <form onSubmit={handleFetch} className="flex flex-col sm:flex-row gap-3">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Paste X / Twitter URL (e.g. https://x.com/username/status/...)"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                className="w-full px-4 py-3 bg-[#0a0a0c] border border-[#2a2a30] text-[#e2ded6] font-mono text-xs placeholder-[#4a4844] focus:outline-none focus:border-[#c49368] transition duration-200"
-              />
-              {url && (
-                <button
-                  type="button"
-                  onClick={() => setUrl('')}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center font-mono text-[0.65rem] text-[#706c66] hover:text-[#e2ded6]"
-                >
-                  CLEAR
-                </button>
-              )}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 flex-1 w-full space-y-8">
+        
+        {/* Hero Section with CornerFrame */}
+        <CornerFrame showCorners className="p-6 bg-[#111114]/90 border border-[#2a2a30]">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Badge variant="teal">V1.0.0-PROXIED</Badge>
+                <Badge variant="outline">CYBER-MINIMALIST</Badge>
+              </div>
+              <h1 className="font-mono text-2xl sm:text-3xl font-light text-[#e2ded6] tracking-tight leading-tight">
+                X <span className="text-[#c49368] font-normal">/</span> Twitter High-Fidelity Downloader
+              </h1>
+              <p className="mt-1 text-[#706c66] font-mono text-xs sm:text-sm tracking-wide">
+                Extract uncompressed MP4 videos, multi-frame galleries & telemetry data directly without loss.
+              </p>
             </div>
-
-            <button
-              type="submit"
-              disabled={loading || !url.trim()}
-              className="px-6 py-3 bg-[#c49368] hover:bg-[#d4a478] text-[#0a0a0c] font-mono text-xs font-semibold flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed transition duration-150 uppercase tracking-wider"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>ANALYZING...</span>
-                </>
-              ) : (
-                <>
-                  <span>FETCH MEDIA</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick link examples */}
-          <div className="mt-4 flex flex-wrap items-center gap-2 font-mono text-[0.68rem] text-[#706c66]">
-            <span className="text-[#4a4844]">PRESETS:</span>
-            {sampleTweets.map((s, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={() => {
-                  setUrl(s.url);
-                  setTimeout(() => handleFetch(), 50);
-                }}
-                className="px-2 py-0.5 bg-[#18181c] hover:bg-[#1f1f24] hover:text-[#e2ded6] text-[#b0aca4] border border-[#1e1e24] transition duration-150"
+            
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2"
               >
-                {s.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <div className="mt-6 p-4 bg-[#111114] border border-[#b05050]/50 text-[#e2ded6] flex items-start gap-3">
-            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5 text-[#b05050]" />
-            <div className="font-mono text-xs">
-              <span className="text-[#b05050] font-semibold">ERROR:</span> {error}
+                <HelpCircle className="w-3.5 h-3.5 text-[#c49368]" />
+                <span>SPECIFICATIONS</span>
+              </Button>
             </div>
           </div>
+
+          {/* Telemetry buffer bar */}
+          <div className="mt-6 pt-4 border-t border-[#1e1e24]">
+            <TelemetryBar
+              value={tweet ? 100 : (loading ? 65 : 20)}
+              max={100}
+              label="BUFFER SATURATION"
+              coord="EXT_CH1"
+              variant="accent"
+              segmented
+              segmentsCount={12}
+              showReadout
+            />
+          </div>
+        </CornerFrame>
+
+        {/* Input Terminal Card using BracketCard */}
+        <BracketCard active={loading} className="p-4 sm:p-6 bg-[#111114] border border-[#2a2a30]">
+          <form onSubmit={handleFetch} className="space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 items-end">
+              <div className="flex-1 w-full">
+                <Input
+                  label="TARGET RESOURCE IDENTIFIER"
+                  sublabel="Post URL / Status link"
+                  placeholder="https://x.com/username/status/..."
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  fullWidth
+                  prefixSymbol={<span className="text-[#c49368] font-mono text-xs">URL&gt;</span>}
+                  suffixSymbol={
+                    url ? (
+                      <button
+                        type="button"
+                        onClick={() => setUrl('')}
+                        className="text-[0.65rem] font-mono text-[#706c66] hover:text-[#e2ded6]"
+                      >
+                        CLEAR
+                      </button>
+                    ) : null
+                  }
+                />
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={loading || !url.trim()}
+                className="w-full sm:w-auto h-[42px] px-6 flex items-center justify-center gap-2 uppercase tracking-wider"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>ANALYZING</span>
+                  </>
+                ) : (
+                  <>
+                    <span>EXTRACT</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Quick link presets and controls */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2 font-mono text-[0.68rem] text-[#706c66]">
+                <span className="text-[#4a4844]">PRESETS:</span>
+                {sampleTweets.map((s, idx) => (
+                  <Button
+                    key={idx}
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setUrl(s.url);
+                      setTimeout(() => handleFetch(), 50);
+                    }}
+                    className="h-6 text-[0.68rem] px-2 py-0 border border-[#2a2a30]"
+                  >
+                    {s.label}
+                  </Button>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-4">
+                <CyberSwitch
+                  size="sm"
+                  checked={highQualityOnly}
+                  onChange={setHighQualityOnly}
+                  label="HQ Priority"
+                  variant="default"
+                />
+                <CyberSwitch
+                  size="sm"
+                  checked={proxyDirect}
+                  onChange={setProxyDirect}
+                  label="Stream Proxy"
+                  variant="teal"
+                />
+              </div>
+            </div>
+          </form>
+        </BracketCard>
+
+        {/* Error Alert with StickyNote */}
+        {error && (
+          <StickyNote colorVariant={4} title="ERROR OCCURRED" tape className="w-full">
+            <div className="font-mono text-xs text-[#e2ded6] flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-[#b05050]" />
+              <span>{error}</span>
+            </div>
+          </StickyNote>
         )}
 
         {/* Result Area */}
         {tweet && (
-          <div className="mt-8 space-y-6">
-            {/* Tweet Summary Card */}
-            <div className="bg-[#111114] border border-[#2a2a30] p-5">
+          <div className="space-y-6">
+            {/* View switcher tabs */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <SegmentedControl
+                variant="accent"
+                value={activeTab}
+                onChange={(val) => setActiveTab(val as any)}
+                options={[
+                  { value: 'media', label: 'Media Stream', badge: tweet.media.length },
+                  { value: 'specs', label: 'Telemetry & Specs' },
+                  { value: 'terminal', label: 'Raw Payload' },
+                  { value: 'vinyl', label: 'Audio / Vinyl Mode' },
+                ]}
+              />
+
+              <div className="flex items-center gap-2 font-mono text-xs">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyUrl}
+                  className="flex items-center gap-1.5"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-[#6a9a6a]" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copied ? 'COPIED' : 'SHARE'}</span>
+                </Button>
+                <a href={tweet.url} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" size="sm" className="flex items-center gap-1.5 border border-[#2a2a30]">
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>ORIGINAL</span>
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            {/* Author summary card */}
+            <CornerFrame showCorners className="p-5 bg-[#111114] border border-[#2a2a30]">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   {tweet.author.avatarUrl ? (
                     <img
                       src={tweet.author.avatarUrl}
                       alt={tweet.author.name}
-                      className="w-10 h-10 border border-[#2a2a30] object-cover"
+                      className="w-12 h-12 border border-[#2a2a30] object-cover"
                     />
                   ) : (
-                    <div className="w-10 h-10 bg-[#18181c] border border-[#2a2a30] flex items-center justify-center font-mono text-xs text-[#c49368]">
+                    <div className="w-12 h-12 bg-[#18181c] border border-[#2a2a30] flex items-center justify-center font-mono text-sm text-[#c49368]">
                       {tweet.author.name[0] || 'X'}
                     </div>
                   )}
@@ -221,206 +378,317 @@ export default function App() {
                       {tweet.author.verified && (
                         <CheckCircle2 className="w-3.5 h-3.5 text-[#c49368]" />
                       )}
+                      <Badge variant="teal">VERIFIED</Badge>
                     </div>
-                    <div className="font-mono text-[0.7rem] text-[#706c66]">
+                    <div className="font-mono text-[0.75rem] text-[#706c66]">
                       @{tweet.author.screenName}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={copyUrl}
-                    className="px-2.5 py-1.5 bg-[#18181c] hover:bg-[#1f1f24] text-[#b0aca4] hover:text-[#e2ded6] border border-[#2a2a30] font-mono text-[0.68rem] flex items-center gap-1.5 transition"
-                    title="Copy post link"
-                  >
-                    {copied ? <Check className="w-3 h-3 text-[#6a9a6a]" /> : <Copy className="w-3 h-3" />}
-                    <span>{copied ? 'COPIED' : 'SHARE'}</span>
-                  </button>
-                  <a
-                    href={tweet.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-2.5 py-1.5 bg-[#18181c] hover:bg-[#1f1f24] text-[#b0aca4] hover:text-[#e2ded6] border border-[#2a2a30] font-mono text-[0.68rem] flex items-center gap-1.5 transition"
-                    title="Open on X"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>ORIGINAL</span>
-                  </a>
+                <div className="flex items-center gap-4 font-mono text-xs text-[#706c66]">
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3.5 h-3.5 text-[#b05050]" />
+                    {tweet.likes.toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Repeat className="w-3.5 h-3.5 text-[#6a9e9e]" />
+                    {tweet.reposts.toLocaleString()}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <MessageCircle className="w-3.5 h-3.5 text-[#c49368]" />
+                    {tweet.replies.toLocaleString()}
+                  </span>
                 </div>
               </div>
 
-              {/* Tweet Text Content */}
               {tweet.text && (
                 <div className="mt-4 text-[#b0aca4] text-xs leading-relaxed whitespace-pre-wrap font-sans border-t border-[#1e1e24] pt-3">
                   {tweet.text}
                 </div>
               )}
+            </CornerFrame>
 
-              {/* Engagement Stats */}
-              <div className="mt-4 pt-3 border-t border-[#1e1e24] flex items-center gap-6 font-mono text-[0.65rem] text-[#706c66]">
-                <span className="flex items-center gap-1.5">
-                  <Heart className="w-3 h-3 text-[#b05050]" />
-                  {tweet.likes.toLocaleString()}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Repeat className="w-3 h-3 text-[#6a9e9e]" />
-                  {tweet.reposts.toLocaleString()}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <MessageCircle className="w-3 h-3 text-[#c49368]" />
-                  {tweet.replies.toLocaleString()}
-                </span>
-                <span className="ml-auto text-[#4a4844] hidden sm:inline">
-                  {tweet.createdAt}
-                </span>
-              </div>
-            </div>
-
-            {/* Media Items Section */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-[#1e1e24] pb-2">
-                <h2 className="font-mono text-xs text-[#e2ded6] uppercase tracking-wider flex items-center gap-2">
-                  <Film className="w-3.5 h-3.5 text-[#c49368]" />
-                  Detected Media [{tweet.media.length}]
-                </h2>
-              </div>
-
-              {tweet.media.length === 0 ? (
-                <div className="p-8 text-center bg-[#111114] border border-[#1e1e24] text-[#706c66] font-mono text-xs">
-                  NO DIRECT MEDIA ATTACHMENTS DETECTED
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {tweet.media.map((media, index) => {
-                    const isVideo = media.type === 'video' || media.type === 'gif';
-                    return (
-                      <div
-                        key={media.id || index}
-                        className="bg-[#111114] border border-[#2a2a30] hover:border-[#c49368]/50 flex flex-col justify-between transition duration-200"
-                      >
-                        {/* Media Preview Box */}
-                        <div className="relative aspect-video bg-[#0a0a0c] flex items-center justify-center overflow-hidden border-b border-[#1e1e24]">
-                          {isVideo ? (
-                            <video
-                              src={selectedFormat[media.id] || media.url}
-                              poster={media.thumbnailUrl}
-                              controls
-                              preload="metadata"
-                              className="max-h-full max-w-full object-contain"
-                            />
-                          ) : (
-                            <img
-                              src={media.url}
-                              alt={`Post media ${index + 1}`}
-                              className="max-h-full max-w-full object-contain"
-                            />
-                          )}
-
-                          {/* Tag */}
-                          <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 bg-[#0a0a0c]/90 border border-[#2a2a30] font-mono text-[0.62rem] text-[#b0aca4]">
+            {/* Tab 1: Media Items View */}
+            {activeTab === 'media' && (
+              <div className="space-y-4">
+                {tweet.media.length === 0 ? (
+                  <div className="p-8 text-center bg-[#111114] border border-[#1e1e24] text-[#706c66] font-mono text-xs">
+                    NO DIRECT MEDIA ATTACHMENTS DETECTED
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {tweet.media.map((media, index) => {
+                      const isVideo = media.type === 'video' || media.type === 'gif';
+                      return (
+                        <BracketCard
+                          key={media.id || index}
+                          active
+                          className="bg-[#111114] border border-[#2a2a30] flex flex-col justify-between"
+                        >
+                          {/* Media Preview Box */}
+                          <div className="relative aspect-video bg-[#0a0a0c] flex items-center justify-center overflow-hidden border-b border-[#1e1e24]">
                             {isVideo ? (
-                              <>
-                                <Video className="w-3 h-3 text-[#c49368]" />
-                                <span>{media.type === 'gif' ? 'GIF' : 'VIDEO'}</span>
-                              </>
+                              <video
+                                src={selectedFormat[media.id] || media.url}
+                                poster={media.thumbnailUrl}
+                                controls
+                                preload="metadata"
+                                className="max-h-full max-w-full object-contain"
+                              />
                             ) : (
-                              <>
-                                <ImageIcon className="w-3 h-3 text-[#6a9e9e]" />
-                                <span>PHOTO</span>
-                              </>
+                              <img
+                                src={media.url}
+                                alt={`Post media ${index + 1}`}
+                                className="max-h-full max-w-full object-contain"
+                              />
                             )}
-                          </div>
-                        </div>
 
-                        {/* Controls */}
-                        <div className="p-4 space-y-3 bg-[#111114]">
-                          {isVideo && media.formats && media.formats.length > 1 && (
-                            <div>
-                              <label className="font-mono text-[0.65rem] text-[#706c66] block mb-1">
-                                SELECT RESOLUTION:
-                              </label>
-                              <select
-                                value={selectedFormat[media.id] || media.url}
-                                onChange={(e) =>
-                                  setSelectedFormat((prev) => ({
-                                    ...prev,
-                                    [media.id]: e.target.value,
-                                  }))
-                                }
-                                className="w-full bg-[#0a0a0c] border border-[#2a2a30] px-3 py-2 font-mono text-xs text-[#e2ded6] focus:outline-none focus:border-[#c49368]"
-                              >
-                                {media.formats.map((fmt, fIdx) => (
-                                  <option key={fIdx} value={fmt.url}>
-                                    {fmt.quality || `${fmt.width}x${fmt.height}`}
-                                    {fmt.bitrate ? ` (${Math.round(fmt.bitrate / 1000)} kbps)` : ''}
-                                  </option>
-                                ))}
-                              </select>
+                            {/* Tag */}
+                            <div className="absolute top-2 left-2 flex items-center gap-1.5">
+                              <Badge variant={isVideo ? 'accent' : 'teal'}>
+                                {isVideo ? (media.type === 'gif' ? 'GIF' : 'VIDEO') : 'PHOTO'}
+                              </Badge>
                             </div>
-                          )}
-
-                          <div className="flex items-center gap-2 pt-1">
-                            <a
-                              href={getDownloadUrl(media)}
-                              className="flex-1 py-2.5 px-4 bg-[#1f1f24] hover:bg-[#c49368] text-[#e2ded6] hover:text-[#0a0a0c] border border-[#2a2a30] hover:border-[#c49368] font-mono text-xs font-semibold flex items-center justify-center gap-2 transition duration-150 uppercase tracking-wider"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>DOWNLOAD</span>
-                            </a>
-
-                            <a
-                              href={selectedFormat[media.id] || media.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-2.5 bg-[#18181c] hover:bg-[#1f1f24] text-[#b0aca4] hover:text-[#e2ded6] border border-[#2a2a30] transition"
-                              title="Direct Source Link"
-                            >
-                              <ExternalLink className="w-4 h-4" />
-                            </a>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+
+                          {/* Controls */}
+                          <div className="p-4 space-y-3 bg-[#111114]">
+                            {isVideo && media.formats && media.formats.length > 1 && (
+                              <div>
+                                <label className="font-mono text-[0.65rem] text-[#706c66] block mb-1">
+                                  STREAM RESOLUTION:
+                                </label>
+                                <select
+                                  value={selectedFormat[media.id] || media.url}
+                                  onChange={(e) =>
+                                    setSelectedFormat((prev) => ({
+                                      ...prev,
+                                      [media.id]: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full bg-[#0a0a0c] border border-[#2a2a30] px-3 py-2 font-mono text-xs text-[#e2ded6] focus:outline-none focus:border-[#c49368]"
+                                >
+                                  {media.formats.map((fmt, fIdx) => (
+                                    <option key={fIdx} value={fmt.url}>
+                                      {fmt.quality || `${fmt.width}x${fmt.height}`}
+                                      {fmt.bitrate ? ` (${Math.round(fmt.bitrate / 1000)} kbps)` : ''}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
+
+                            <div className="flex items-center gap-2 pt-1">
+                              <a href={getDownloadUrl(media)} className="flex-1">
+                                <Button
+                                  variant="primary"
+                                  size="md"
+                                  className="w-full flex items-center justify-center gap-2"
+                                >
+                                  <Download className="w-4 h-4" />
+                                  <span>DOWNLOAD ASSET</span>
+                                </Button>
+                              </a>
+
+                              <Tooltip content="Open in new window" position="top">
+                                <a
+                                  href={selectedFormat[media.id] || media.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  <Button variant="ghost" size="md" className="border border-[#2a2a30]">
+                                    <ExternalLink className="w-4 h-4" />
+                                  </Button>
+                                </a>
+                              </Tooltip>
+                            </div>
+                          </div>
+                        </BracketCard>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab 2: Specs & KeyValGrid */}
+            {activeTab === 'specs' && (
+              <CornerFrame showCorners className="p-6 bg-[#111114] border border-[#2a2a30]">
+                <KeyValGrid
+                  title="RESOURCE METRIC INSPECTION"
+                  coord="CH-09"
+                  columns={2}
+                  leaderDots
+                  items={[
+                    { key: 'POST IDENTIFIER', value: tweet.id, status: 'default' },
+                    { key: 'AUTHOR HANDLE', value: `@${tweet.author.screenName}`, status: 'success' },
+                    { key: 'CREATION TIME', value: tweet.createdAt || 'N/A', status: 'default' },
+                    { key: 'RELATIVE STAMP', value: formatRelativeTime(Date.now() - 3600000), status: 'purple' },
+                    { key: 'MEDIA COUNT', value: `${tweet.media.length} streams`, status: 'purple' },
+                    { key: 'LIKES TELEMETRY', value: tweet.likes.toLocaleString(), status: 'alert' },
+                    { key: 'REPOST SPREAD', value: tweet.reposts.toLocaleString(), status: 'default' },
+                    { key: 'EXTRACTION ENGINE', value: 'FxTwitter / vxTwitter Proxy', status: 'success' },
+                  ]}
+                />
+              </CornerFrame>
+            )}
+
+            {/* Tab 3: Terminal Raw Output with TerminalWindow */}
+            {activeTab === 'terminal' && (
+              <TerminalWindow
+                title="payload_dump.json"
+                badge="LIVE STREAM"
+                showLineNumbers
+                copyable
+                code={JSON.stringify(tweet, null, 2)}
+              />
+            )}
+
+            {/* Tab 4: Vinyl Audio Player Showcase */}
+            {activeTab === 'vinyl' && (
+              <div className="p-6 bg-[#111114] border border-[#2a2a30] flex flex-col items-center justify-center space-y-4">
+                <Vinyl
+                  variant="gold"
+                  size="md"
+                  layout="turntable"
+                  playing={vinylPlaying}
+                  title={tweet.author.name}
+                  artist={`@${tweet.author.screenName}`}
+                  album="X Media Stream"
+                  rpm="33"
+                  coverUrl={tweet.author.avatarUrl || tweet.media[0]?.thumbnailUrl || tweet.media[0]?.url}
+                  controls={
+                    <Button
+                      variant={vinylPlaying ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => setVinylPlaying(!vinylPlaying)}
+                    >
+                      {vinylPlaying ? 'PAUSE ROTATION' : 'START ROTATION'}
+                    </Button>
+                  }
+                />
+              </div>
+            )}
           </div>
         )}
 
-        {/* Info Grid */}
-        <div className="mt-16 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t border-[#1e1e24] pt-8">
-          <div className="p-4 bg-[#111114] border border-[#1e1e24]">
-            <div className="font-mono text-[0.65rem] text-[#c49368] mb-1">01 / RESOLUTION</div>
-            <div className="font-mono text-sm text-[#e2ded6] mb-1">High-Fidelity Stream</div>
-            <p className="text-xs text-[#706c66] font-sans">
-              Extracts 1080p, 720p, or high-bitrate original streams without transcode loss.
-            </p>
-          </div>
+        {/* Feature Highlights with SpoilerGate */}
+        <SpoilerGate
+          title="ADVANCED PROTOCOL ARCHITECTURE"
+          description="Click clearance to inspect internal proxy topology and stream routing parameters."
+          clearanceText="SECURITY CLEARANCE: LEVEL 2"
+          buttonText="ACCESS TECHNICAL DATA"
+        >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4">
+            <StickyNote colorVariant={1} title="01 / FIDELITY" tape>
+              <div className="text-xs text-[#b0aca4]">
+                Extracts uncompressed 1080p, 720p, or maximum bitrate MP4 streams directly.
+              </div>
+            </StickyNote>
 
-          <div className="p-4 bg-[#111114] border border-[#1e1e24]">
-            <div className="font-mono text-[0.65rem] text-[#6a9e9e] mb-1">02 / ARCHITECTURE</div>
-            <div className="font-mono text-sm text-[#e2ded6] mb-1">Proxy Streaming</div>
-            <p className="text-xs text-[#706c66] font-sans">
-              Internal stream proxy avoids CORS roadblocks and forces native browser download dialogs.
-            </p>
-          </div>
+            <StickyNote colorVariant={2} title="02 / CROS-PROXY" tape>
+              <div className="text-xs text-[#b0aca4]">
+                Native Node streaming pipe bypasses CORS barriers & triggers instant save dialogs.
+              </div>
+            </StickyNote>
 
-          <div className="p-4 bg-[#111114] border border-[#1e1e24]">
-            <div className="font-mono text-[0.65rem] text-[#a08060] mb-1">03 / ZERO LOGIN</div>
-            <div className="font-mono text-sm text-[#e2ded6] mb-1">Direct Extraction</div>
-            <p className="text-xs text-[#706c66] font-sans">
-              Multi-tiered scraping using FxTwitter, vxTwitter, and local engine fallbacks.
-            </p>
+            <StickyNote colorVariant={3} title="03 / MONOREPO UI" tape>
+              <div className="text-xs text-[#b0aca4]">
+                100% powered by the official <code>@krpkg/ui</code> design system library.
+              </div>
+            </StickyNote>
           </div>
-        </div>
+        </SpoilerGate>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-[#1e1e24] py-6 text-center font-mono text-[0.68rem] text-[#706c66] bg-[#0a0a0c]">
-        <p>kurzagin-themed architecture · TypeScript · Vite · React</p>
-      </footer>
+      {/* Tactical Drawer from @krpkg/ui */}
+      <TacticalDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        title="ENGINE CONFIGURATION"
+        coord="CFG_01"
+        sublabel="Global proxy settings"
+        position="right"
+      >
+        <div className="p-4 space-y-6">
+          <div className="space-y-4">
+            <CyberSwitch
+              checked={highQualityOnly}
+              onChange={setHighQualityOnly}
+              label="Automatic Highest Quality Selection"
+              sublabel="Select 1080p stream over lower bitrate alternatives"
+            />
+            <CyberSwitch
+              checked={proxyDirect}
+              onChange={setProxyDirect}
+              label="Bypass Browser CORS Protection"
+              sublabel="Route video bytechunks through internal Express pipe"
+              variant="teal"
+            />
+          </div>
+
+          <div className="border-t border-[#2a2a30] pt-4 space-y-2">
+            <TechLabel label="UI CORE" jp="パッケージ" coord="@krpkg/ui" />
+            <p className="text-xs text-[#706c66] font-mono leading-relaxed">
+              Cyber-minimalist design system with precision typography, telemetry meters, and tactical HUD controls.
+            </p>
+          </div>
+
+          <Button
+            variant="outline"
+            size="md"
+            className="w-full"
+            onClick={() => setIsDrawerOpen(false)}
+          >
+            DISMISS
+          </Button>
+        </div>
+      </TacticalDrawer>
+
+      {/* HudModal from @krpkg/ui */}
+      <HudModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="SYSTEM SPECIFICATIONS"
+        jp="システム仕様"
+        coord="DOCS-01"
+        footer={
+          <Button variant="primary" size="sm" onClick={() => setIsModalOpen(false)}>
+            CONFIRM & CLOSE
+          </Button>
+        }
+      >
+        <div className="space-y-3 font-mono text-xs text-[#b0aca4]">
+          <p>
+            This application is constructed using the cyber-minimalist design language from{' '}
+            <strong className="text-[#c49368]">@krpkg/ui</strong>.
+          </p>
+          <ul className="list-disc list-inside space-y-1 text-[#706c66]">
+            <li>Terminal Window & Code Inspection</li>
+            <li>Tactical HUD Modals & Sliding Drawers</li>
+            <li>Telemetry Audio Vinyl Player</li>
+            <li>Key-Value Data Grids & Precision Badges</li>
+          </ul>
+        </div>
+      </HudModal>
+
+      {/* BottomBar navigation from @krpkg/ui */}
+      <BottomBar
+        fixed
+        variant="default"
+        activeId={bottomNavId}
+        onSelect={(id) => {
+          setBottomNavId(id);
+          if (id === 'settings') setIsDrawerOpen(true);
+          if (id === 'specs') setIsModalOpen(true);
+        }}
+        items={[
+          { id: 'home', label: 'EXTRACTOR', icon: <Radio className="w-4 h-4" /> },
+          { id: 'specs', label: 'METRICS', icon: <Layers className="w-4 h-4" />, badge: 'SPEC' },
+          { id: 'settings', label: 'SETTINGS', icon: <Settings className="w-4 h-4" /> },
+        ]}
+      />
     </div>
   );
 }
